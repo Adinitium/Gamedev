@@ -11,11 +11,17 @@ local W, H
 -- Maximum number of obejcts
 local MAX_OBJECTS
 
+--Speed
+local Speed = 250
+
+--Radius
+local Radius = 16
+
 -- The list of all game objects
 local objects
 
 -- Holds the source object containing the "bounce" sound effect
-local bounce_sfx
+local bounce_sfx --= love.audio.newSource( 'pingpongbat.ogg', 'ogg' )
 
 --[[ Auxiliary functions ]]--
 
@@ -27,25 +33,46 @@ local bounce_sfx
 --  See https://love2d.org/wiki/love.math.random
 local function newObject ()
   local new_object = {}
-  new_object.x = W - love.math.random()*(W - 32) - 16
-  new_object.y = H - love.math.random()*(H - 32) - 16
+  	
+  new_object.x = Radius + love.math.random()*(W - 2*Radius)
+  new_object.y = Radius + love.math.random()*(H - 2*Radius)
+  
   local dir = love.math.random()*2*math.pi
   new_object.dir_x = math.cos(dir)
   new_object.dir_y = math.sin(dir)
+  new_object.r = math.random()*255
+  new_object.g = math.random()*255
+  new_object.b = math.random()*255
   return new_object
 end
-  
+ 
+local function collision (object1, object2)
+	local dist = math.sqrt((object1.x - object2.x)*(object1.x - object2.x) + (object1.y - object2.y)*(object1.y - object2.y))
+	if dist <= 2*Radius then
+		object1.dir_x = -object1.dir_x
+		object1.dir_y = -object1.dir_y
+		object2dir_x = -object2.dir_x
+		object2.dir_y = -object2.dir_y
+	end
+end
+
 --- Move the given object as if 'dt' seconds had passed. Basically follow
 --  the uniform movement equation: S = S0 + v*dt.
 local function moveObject (object, dt)
-  object.x = object.x + 500*object.dir_x*dt
-  object.y = object.y + 500*object.dir_y*dt
-  if object.x < 16 or object.x > W - 16 then
+  object.x = object.x + Speed*object.dir_x*dt
+  object.y = object.y + Speed*object.dir_y*dt
+  if object.x < Radius or object.x > W - Radius then
   	object.dir_x = -object.dir_x
+  	
+  	object.x = math.max(Radius, math.min(object.x, W-Radius))
+  	
   	love.audio.play( bounce_sfx )
   end
-  if object.y < 16 or object.y > H - 16 then
+  if object.y < Radius or object.y > H - Radius then
   	object.dir_y = -object.dir_y
+  	
+  	object.y = math.max(Radius, math.min(object.y, H-Radius))
+  	
   	love.audio.play( bounce_sfx )
   end
 end
@@ -60,7 +87,7 @@ end
 --  See https://love2d.org/wiki/love.graphics.getDimensions
 function love.load ()
   W, H = love.graphics.getDimensions()
-  MAX_OBJECTS = 1
+  MAX_OBJECTS = 50
   objects = {}
   for i=1,MAX_OBJECTS do
     table.insert(objects, newObject())
@@ -71,8 +98,11 @@ end
 --- Update the game's state, which in this case means properly moving each
 --  game object according to its moving direction and current position.
 function love.update (dt)
-  for i,object in ipairs(objects) do
-    moveObject(object, dt)
+  for i,object1 in ipairs(objects) do
+    moveObject(object1, dt)
+    for j = i + 1, #objects do
+    	collision(object1, objects[j])
+    end
   end
 end
 
@@ -89,7 +119,8 @@ end
 --  See https://love2d.org/wiki/love.graphics.circle
 function love.draw ()
   for i,object in ipairs(objects) do
-    love.graphics.circle('line', object.x, object.y, 16, 16)
+  	love.graphics.setColor(object.r, object.b, object.g, 255)
+    love.graphics.circle('fill', object.x, object.y, Radius, 16)
   end
 end
 
