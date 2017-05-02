@@ -12,7 +12,10 @@ local W, H
 local MAX_OBJECTS
 
 --Speed
-local Speed = 10
+local Speed = 250
+
+--Mass
+local m = 1
 
 --Radius
 local Radius = 16
@@ -43,6 +46,9 @@ local function newObject ()
   new_object.r = math.random()*255
   new_object.g = math.random()*255
   new_object.b = math.random()*255
+  new_object.speed_x = Speed
+  new_object.speed_y = Speed
+
   return new_object
 end
  
@@ -55,26 +61,32 @@ local function collision (object1, object2)
     object1.dir_y = object2.dir_y
     object2.dir_x = object1_aux_x
     object2.dir_y = object1_aux_y
+    
+    ang = math.atan2((object2.y - object1.y) , (object2.x - object1.x))
+    object1.x = object1.x - ((2*Radius - dist)/2)*math.cos(ang)
+		object2.x = object2.x + ((2*Radius - dist)/2)*math.cos(ang)
+		object1.y = object1.y - ((2*Radius - dist)/2)*math.sin(ang)
+		object2.y = object2.y + ((2*Radius - dist)/2)*math.sin(ang)
 	end
-  if object1.x > object2.x then
-      object1.x = object2.x + (2*Radius)
-  end
-  if object1.x < object2.x then
-    object2.x = object1.x + (2*Radius)
-  end
-  if object1.y > object2.y then
-    object1.y = object2.y + (2*Radius)
-  end
-  if object1.y < object2.y then
-      object2.y = object1.y + (2*Radius)
-  end
+    
+	
+end
+
+local function forcea(object , dt)
+	mouse_x , mouse_y = love.mouse.getPosition()
+	
+	force_dir_x , force_dir_y = (mouse_x - object.x) ,(mouse_y - object.y)
+	distance = math.sqrt(force_dir_x^2 + force_dir_y^2)
+	force = (1.0 / distance)*70000
+	object.speed_x = Speed + force*force_dir_x*dt
+	object.speed_y = Speed + force*force_dir_y*dt
 end
 
 --- Move the given object as if 'dt' seconds had passed. Basically follow
 --  the uniform movement equation: S = S0 + v*dt.
 local function moveObject (object, dt)
-  object.x = object.x + Speed*object.dir_x*dt
-  object.y = object.y + Speed*object.dir_y*dt
+  object.x = object.x + object.speed_x*object.dir_x*dt
+  object.y = object.y + object.speed_y*object.dir_y*dt
   if object.x < Radius or object.x > W - Radius then
   	object.dir_x = -object.dir_x
   	
@@ -113,11 +125,19 @@ end
 --  game object according to its moving direction and current position.
 function love.update (dt)
   for i,object1 in ipairs(objects) do
+  
+  if love.mouse.isDown(1) then  
+    	forcea(object1 , dt)
+    else 
+    end
+  
     moveObject(object1, dt)
     for j = i + 1, #objects do
     	collision(object1, objects[j])
     end
+    
   end
+  
 end
 
 --- Detects when the player presses a keyboard button. Closes the game if it
@@ -128,6 +148,7 @@ function love.keypressed (key)
     love.event.push 'quit'
   end
 end
+
 
 --- Draw all game objects as simle white circles. We will improve on that.
 --  See https://love2d.org/wiki/love.graphics.circle
