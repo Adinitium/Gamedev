@@ -12,7 +12,7 @@ local W, H
 local MAX_OBJECTS
 
 --Speed
-local Speed = 250
+local Speed = 10
 
 --Radius
 local Radius = 16
@@ -49,11 +49,25 @@ end
 local function collision (object1, object2)
 	local dist = math.sqrt((object1.x - object2.x)*(object1.x - object2.x) + (object1.y - object2.y)*(object1.y - object2.y))
 	if dist <= 2*Radius then
-		object1.dir_x = -object1.dir_x
-		object1.dir_y = -object1.dir_y
-		object2dir_x = -object2.dir_x
-		object2.dir_y = -object2.dir_y
+    object1_aux_x = object1.dir_x
+    object1_aux_y = object1.dir_y
+    object1.dir_x = object2.dir_x
+    object1.dir_y = object2.dir_y
+    object2.dir_x = object1_aux_x
+    object2.dir_y = object1_aux_y
 	end
+  if object1.x > object2.x then
+      object1.x = object2.x + (2*Radius)
+  end
+  if object1.x < object2.x then
+    object2.x = object1.x + (2*Radius)
+  end
+  if object1.y > object2.y then
+    object1.y = object2.y + (2*Radius)
+  end
+  if object1.y < object2.y then
+      object2.y = object1.y + (2*Radius)
+  end
 end
 
 --- Move the given object as if 'dt' seconds had passed. Basically follow
@@ -87,7 +101,7 @@ end
 --  See https://love2d.org/wiki/love.graphics.getDimensions
 function love.load ()
   W, H = love.graphics.getDimensions()
-  MAX_OBJECTS = 50
+  MAX_OBJECTS = 25
   objects = {}
   for i=1,MAX_OBJECTS do
     table.insert(objects, newObject())
